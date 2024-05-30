@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   ParseBoolPipe,
   ParseIntPipe,
@@ -15,6 +17,7 @@ import {
 import { Request, Response } from 'express';
 import { CreateUserDto } from './user.dto';
 import { UsersService } from './users.service';
+import { Types } from 'mongoose';
 
 @Controller('users')
 export class UsersController {
@@ -27,26 +30,25 @@ export class UsersController {
     @Query('sortDesc', ParseBoolPipe) sort: boolean,
   ) {
     console.log(page, limit, sort);
-    return this.userService.fetchUsers();
+    const result = this.userService.fetchUsers();
+    return result;
   }
 
   @Post()
-  createUser(@Req() req: Request, @Res() res: Response) {
+  createUser(@Req() req: Request) {
     try {
       console.log(req.body);
-      res.send({
-        status: 201,
-        success: true,
-        message: 'user created',
-        data: req.body,
-      });
+      const result = this.userService.createUser(req.body);
+      return result;
+      // res.send({
+      //   status: 201,
+      //   success: true,
+      //   message: 'user created',
+      //   data: req.body,
+      // });
     } catch (error) {
       console.log(error);
-      res.send({
-        status: 400,
-        success: false,
-        message: 'something went wrong.',
-      });
+      throw new HttpException('something went wrong.', HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -64,17 +66,20 @@ export class UsersController {
 
   @Get(':id/:postId')
   getUserById(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: Types.ObjectId,
     @Param('postId') postId: string,
-    @Res() res: Response,
+    @Req() req: Request,
   ) {
-    // console.log(req.params);
-    console.log(id, postId);
-    res.send({
-      status: 200,
-      success: true,
-      message: 'user get successfully.',
-      data: { id, postId },
-    });
+    try {
+      // console.log(req.params);
+      const result = this.userService.getUserById(id);
+      console.log(req.user, 'auth');
+      console.log(id, postId);
+      console.log(result, '=========');
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new HttpException('something went wrong.', HttpStatus.BAD_REQUEST);
+    }
   }
 }
